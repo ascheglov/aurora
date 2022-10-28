@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width"/>
+  <title>Magnetometer</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    button#refresh {
+      top: 0;
+      right: 0;
+      position: absolute;
+      z-index: 9;
+    } 
+  </style>
+</head>
+<body>
+  <button id="refresh">Refresh</button>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <script>
+    function drawLine(ctx, x0, y0, x1, y1) {
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    }
+    
+    function drawText(ctx, str, x, y, baseline, align) {
+      ctx.textBaseline = baseline;
+      ctx.textAlign = align;
+      ctx.fillText(str, x, y);
+    }
+    
+    let $canvas = document.getElementById('canvas');
+
+    var data = [];
+    
+    function onResize() {
+      $canvas.width = window.innerWidth;
+      $canvas.height = window.innerHeight;
+      drawAll();
+    }
+    window.addEventListener('resize', onResize, false);
+    onResize();
+
+    function drawAll() {
+      let ctx = $canvas.getContext('2d');
+      ctx.font = '1em sans-serif';
+
+      ctx.lineWidth = 0.5;
+
+      if (data.length == 0) { 
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.fillStyle = '#d55e00';
+        drawText(ctx, 'No data, press [refresh] ->', 0, 0, 'top', 'left');
+        return; 
+      }
+      
+      let td = data.slice(1).map(x => new Date(x[0]+'+00:00'));
+      let t = td.map(d => ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2));
+
+      let bt = data.slice(1).map(x => x[6]);
+      let bz = data.slice(1).map(x => x[3]);
+
+      let bstep = 2;
+      let timeStep = 15;
+
+
+      let bmax = Math.floor((Math.max(...bt)+bstep) / bstep) * bstep;
+
+      let textSize = Math.ceil(ctx.measureText('-22|').width);
+      let textMargin = Math.ceil(ctx.measureText('|').width);
+
+      let gx0 = textSize;
+      let gy0 = textSize;
+      let gx1 = ctx.canvas.width - ctx.measureText(':22').width;
+      let gy1 = ctx.canvas.height - textSize - textMargin;
+
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.fillStyle = '#777';
+      ctx.strokeStyle = '#777';
+
+      /*
+      drawText(ctx, `g.margin=${textSize}, t.margin=${textMargin}`,
+               gx1+5, gy0+5, 'top', 'right');
+      /* debug */         
+
+
+      let tnow = td.slice(-1).toLocaleString('ru-RU');
+      drawText(ctx, 'NOAA DSCOVR | Bt, Bz, -Bt | '+tnow, gx0, gy0-textMargin, 'bottom', 'left');
+
+      // Vertical lines.
+      let xstep = (gx1-gx0)/(t.length-1);
+      for (let i = 0; i < t.length; i++) {
+        if (td[i].getMinutes() % timeStep != 0) { continue; }
+        let xi = gx0 + i*xstep;
+        drawLine(ctx, xi, gy0, xi, gy1);
+        // TBD: don't draw text if (i < 5 || i > len-5) 
+        // to avoid labels hanging out of gx0...gx1 range ?
+         if (td[i].getMinutes() % (timeStep*2) != 0) { continue; }
+        drawText(ctx, t[i], xi, gy1+textMargin*2, 'top', 'center');
+      }
+      // drawLine(ctx, gx0, gy0, gx0, gy1);
+
+      // Horizontal lines.
+      for (let i = 0; i <= bmax*2; i+=bstep) {
+        let yi = gy0 + i * (gy1-gy0)/(bmax*2);
+        ctx.strokeStyle = (i != bmax ? '#777' : '#d55e00');
+        drawLine(ctx, gx0, yi, gx1, yi);
+        drawText(ctx, `${bmax-i}`, gx0-textMargin, yi, 'middle', 'right');
+      }
+
+      ctx.lineWidth = 1;    
+      let yscale = (gy1-gy0) / (bmax*2);
+      let ybase = gy0 + (gy1-gy0) / 2;
+      for (let i = 1; i < bt.length; i++) {
+        let x0 = gx0 + (i-1)*xstep;
+        let x1 = gx0 + i*xstep;
+        ctx.strokeStyle = '#009e73';
+        drawLine(ctx, x0, ybase-bt[i-1]*yscale, x1, ybase-bt[i]*yscale);
+        ctx.strokeStyle = '#cc79a7';
+        drawLine(ctx, x0, ybase-bz[i-1]*yscale, x1, ybase-bz[i]*yscale);
+        ctx.strokeStyle = '#009e73';
+        drawLine(ctx, x0, ybase+bt[i-1]*yscale, x1, ybase+bt[i]*yscale);
+      }
+    }
+    
+    const $refresh = document.getElementById('refresh');
+    $refresh.onclick = function() {
+      fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-2-hour.json').then(
+        x => x.json()).then(
+        x => {data = x; drawAll()});
+    }
+    
+  </script>
+</body>
+</html>
