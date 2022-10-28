@@ -9,7 +9,8 @@
       overflow: hidden;
     }
     button#refresh {
-      top: 0;
+      top: 3em;
+      height: 3em;
       right: 0;
       position: absolute;
       z-index: 9;
@@ -114,7 +115,7 @@
         drawText(ctx, `${bmax-i}`, gx0-textMargin, yi, 'middle', 'right');
       }
 
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 2;
       let yscale = (gy1-gy0) / (bmax*2);
       let ybase = gy0 + (gy1-gy0) / 2;
       for (let i = 1; i < bt.length; i++) {
