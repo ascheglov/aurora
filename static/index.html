@@ -13,7 +13,7 @@
       right: 0;
       position: absolute;
       z-index: 9;
-    } 
+    }
   </style>
 </head>
 <body>
@@ -26,17 +26,17 @@
       ctx.lineTo(x1, y1);
       ctx.stroke();
     }
-    
+
     function drawText(ctx, str, x, y, baseline, align) {
       ctx.textBaseline = baseline;
       ctx.textAlign = align;
       ctx.fillText(str, x, y);
     }
-    
+
     let $canvas = document.getElementById('canvas');
 
     var data = [];
-    
+
     function onResize() {
       $canvas.width = window.innerWidth;
       $canvas.height = window.innerHeight;
@@ -51,14 +51,14 @@
 
       ctx.lineWidth = 0.5;
 
-      if (data.length == 0) { 
+      if (data.length == 0) {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.fillStyle = '#d55e00';
         drawText(ctx, 'No data, press [refresh] ->', 0, 0, 'top', 'left');
-        return; 
+        return;
       }
-      
+
       let td = data.slice(1).map(x => new Date(x[0]+'+00:00'));
       let t = td.map(d => ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2));
 
@@ -87,7 +87,7 @@
       /*
       drawText(ctx, `g.margin=${textSize}, t.margin=${textMargin}`,
                gx1+5, gy0+5, 'top', 'right');
-      /* debug */         
+      /* debug */
 
 
       let tnow = td.slice(-1).toLocaleString('ru-RU');
@@ -99,7 +99,7 @@
         if (td[i].getMinutes() % timeStep != 0) { continue; }
         let xi = gx0 + i*xstep;
         drawLine(ctx, xi, gy0, xi, gy1);
-        // TBD: don't draw text if (i < 5 || i > len-5) 
+        // TBD: don't draw text if (i < 5 || i > len-5)
         // to avoid labels hanging out of gx0...gx1 range ?
          if (td[i].getMinutes() % (timeStep*2) != 0) { continue; }
         drawText(ctx, t[i], xi, gy1+textMargin*2, 'top', 'center');
@@ -114,7 +114,7 @@
         drawText(ctx, `${bmax-i}`, gx0-textMargin, yi, 'middle', 'right');
       }
 
-      ctx.lineWidth = 1;    
+      ctx.lineWidth = 1;
       let yscale = (gy1-gy0) / (bmax*2);
       let ybase = gy0 + (gy1-gy0) / 2;
       for (let i = 1; i < bt.length; i++) {
@@ -128,14 +128,14 @@
         drawLine(ctx, x0, ybase+bt[i-1]*yscale, x1, ybase+bt[i]*yscale);
       }
     }
-    
+
     const $refresh = document.getElementById('refresh');
     $refresh.onclick = function() {
       fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-2-hour.json').then(
         x => x.json()).then(
         x => {data = x; drawAll()});
     }
-    
+
   </script>
 </body>
 </html>
